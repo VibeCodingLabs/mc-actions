@@ -1,0 +1,23 @@
+{
+  "name": "moonclaw-actions-factory",
+  "version": "1.0.0",
+  "description": "BullMQ dispatcher for moonclaw-actions-factory",
+  "type": "module",
+  "scripts": {
+    "dispatcher": "node orchestrator/queues/dispatcher.js",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "bullmq": "^5.0.0",
+    "ioredis": "^5.0.0",
+    "better-sqlite3": "^9.0.0",
+    "axios": "^1.7.0",
+    "zod": "^3.23.0",
+    "dotenv": "^16.4.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "@types/node": "^22.0.0",
+    "@types/better-sqlite3": "^7.6.0"
+  }
+}

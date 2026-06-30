@@ -1,0 +1,51 @@
+name: Job Dispatcher
+on:
+  workflow_dispatch:
+    inputs:
+      slug:
+        description: Job slug
+        required: true
+        type: string
+      payload:
+        required: false
+        type: string
+        default: '{}'
+      issue_number:
+        required: false
+        type: string
+concurrency:
+  group: dispatcher-${{ github.run_id }}
+  cancel-in-progress: false
+permissions:
+  issues: write
+  contents: read
+  actions: write
+jobs:
+  dispatch:
+    runs-on: [self-hosted, debian-13]
+    outputs:
+      job_id: ${{ steps.enqueue.outputs.job_id }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Enqueue job via FastAPI
+        id: enqueue
+        env:
+          SLUG: ${{ inputs.slug }}
+          PAYLOAD: ${{ inputs.payload }}
+        run: |
+          RESPONSE=$(curl -sf -X POST "http://localhost:8000/api/v1/jobs/enqueue" \
+            -H "Content-Type: application/json" \
+            -d "{\"slug\":\"$SLUG\",\"payload\":$PAYLOAD}" || echo '{"job_id":"offline"}')
+          JOB_ID=$(echo $RESPONSE | jq -r '.job_id')
+          echo "job_id=$JOB_ID" >> $GITHUB_OUTPUT
+      - name: Comment on issue
+        if: inputs.issue_number != ''
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner, repo: context.repo.repo,
+              issue_number: Number('${{ inputs.issue_number }}'),
+              body: `🚀 Job \`${{ inputs.slug }}\` dispatched — ID: \`${{ steps.enqueue.outputs.job_id }}\``,
+            });
